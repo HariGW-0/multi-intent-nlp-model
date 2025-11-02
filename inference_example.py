@@ -5,7 +5,7 @@ Complete inference example for Multi-Intent NLP Model
 import torch
 from transformers import AutoTokenizer
 from model_architecture import MultiIntentClassifier
-from model_loader import MultiIntentModel
+from safe_model_loader import MultiIntentModel
 import numpy as np
 
 class MultiIntentPredictor:
@@ -22,7 +22,17 @@ class MultiIntentPredictor:
         """Load the trained model"""
         if self.model is None:
             loader = MultiIntentModel()
-            self.model = loader.load()
+            loaded_data = loader.load()
+            
+            # Check if loaded_data is a model or a state dict
+            if isinstance(loaded_data, torch.nn.Module):
+                self.model = loaded_data
+            else:
+                # If it's a state dict, create model and load weights
+                self.model = MultiIntentClassifier(num_intents=self.num_intents)
+                self.model.load_state_dict(loaded_data)
+            
+            self.model.eval()
         return self.model
     
     def predict(self, text, threshold=0.5):
