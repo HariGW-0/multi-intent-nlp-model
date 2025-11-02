@@ -16,9 +16,21 @@ class MultiIntentModel:
             if not reconstruct_model():
                 raise Exception("Failed to reconstruct model")
         
-        # Load the model
+        # Load the model with proper settings for PyTorch 2.6+
         print("📥 Loading model into memory...")
-        self.model = torch.load(model_path, map_location='cpu')
+        try:
+            # First try with weights_only=False (for PyTorch 2.6+)
+            self.model = torch.load(model_path, map_location='cpu', weights_only=False)
+        except Exception as e:
+            print(f"⚠️ Standard load failed: {e}")
+            print("🔄 Trying alternative loading method...")
+            try:
+                # Alternative method for older PyTorch versions
+                self.model = torch.load(model_path, map_location='cpu')
+            except Exception as e2:
+                print(f"❌ All loading methods failed: {e2}")
+                raise Exception("Could not load model file")
+        
         print("✅ Model loaded successfully!")
         return self.model
 
